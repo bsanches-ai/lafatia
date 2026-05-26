@@ -706,8 +706,7 @@ async function enviarPedido() {
       await carregarEstoque();
 
       // Mostra modal de esgotado
-      const lista = esgotados.map(e => '• ' + e).join('
-');
+      const lista = esgotados.map(e => '• ' + e).join('\n');
       document.getElementById("modal-esgotado-lista").textContent = lista;
       document.getElementById("modal-esgotado").classList.add("show");
       return;
