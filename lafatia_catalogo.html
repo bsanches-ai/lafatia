@@ -560,13 +560,13 @@ async function carregarEstoque() {
     const data = await res.json();
     const estoque = data[0].estoque;
 
-    estoque.forEach((item, idx) => {
+    estoque.forEach(function(item, idx) {
       const disponivel = item.disponivel && item.estoque > 0;
       estoqueDisponivel[idx] = disponivel;
 
-      const card = document.querySelector(\`.product-card:nth-child(\${idx + 1})\`);
-      const qtyControl = document.getElementById('qty-' + idx)?.parentElement;
+      const qtyControl = document.getElementById('qtycontrol-' + idx);
       const badge = document.getElementById('badge-' + idx);
+      const estoqueEl = document.getElementById('estoque-' + idx);
 
       if (!disponivel) {
         if (badge) badge.style.display = 'inline-block';
@@ -576,9 +576,8 @@ async function carregarEstoque() {
         }
       } else {
         if (badge) badge.style.display = 'none';
-        const estoqueEl = document.getElementById('estoque-' + idx);
         if (estoqueEl) {
-          estoqueEl.textContent = item.estoque <= 5 ? `Restam apenas ${item.estoque}!` : ``;
+          estoqueEl.textContent = item.estoque <= 5 ? 'Restam apenas ' + item.estoque + '!' : '';
         }
         if (qtyControl) {
           qtyControl.style.opacity = '1';
