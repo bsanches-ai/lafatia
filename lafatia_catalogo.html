@@ -559,6 +559,7 @@ async function carregarEstoque() {
     const res = await fetch(ESTOQUE_URL);
     const data = await res.json();
     const estoque = data[0].estoque;
+    window.estoqueData = estoque;
 
     estoque.forEach(function(item, idx) {
       const disponivel = item.disponivel && item.estoque > 0;
@@ -594,7 +595,16 @@ window.addEventListener('DOMContentLoaded', carregarEstoque);
 
 function changeQty(i, delta) {
   if (!estoqueDisponivel[i]) return;
-  qtds[i] = Math.max(0, qtds[i] + delta);
+
+  const novaQtd = qtds[i] + delta;
+  const estoqueAtual = window.estoqueData ? window.estoqueData[i].estoque : 999;
+
+  if (delta > 0 && novaQtd > estoqueAtual) {
+    showToast('Quantidade indisponível! Máximo disponível: ' + estoqueAtual);
+    return;
+  }
+
+  qtds[i] = Math.max(0, novaQtd);
   document.getElementById("qty-" + i).textContent = qtds[i];
   atualizarResumo();
 }
