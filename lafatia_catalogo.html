@@ -536,6 +536,21 @@
   </div>
 </div>
 
+
+<!-- MODAL ESGOTADO -->
+<div class="modal-overlay" id="modal-esgotado">
+  <div class="modal-box">
+    <div class="modal-icon">😢</div>
+    <h3>Que pena!</h3>
+    <p>Os itens abaixo esgotaram antes do seu pedido:</p>
+    <div class="pix-box" style="text-align:left;">
+      <pre id="modal-esgotado-lista" style="font-family: inherit; font-size:0.9rem; color: var(--marrom); white-space: pre-wrap;"></pre>
+    </div>
+    <p style="margin-top:8px; font-size:0.88rem;">Ajuste seu pedido e tente novamente. 💛</p>
+    <button class="btn-fechar" onclick="fecharModalEsgotado()">Ajustar pedido</button>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -662,10 +677,49 @@ async function enviarPedido() {
     return;
   }
 
-  const total = itens.reduce((s, item) => s + item.subtotal, 0);
   const btn = document.getElementById("btn-enviar");
   btn.disabled = true;
+  btn.textContent = "Verificando estoque...";
+
+  // Checa estoque em tempo real antes de enviar
+  try {
+    const resEstoque = await fetch(ESTOQUE_URL);
+    const dataEstoque = await resEstoque.json();
+    const estoqueAtual = dataEstoque[0].estoque;
+
+    const esgotados = [];
+    itens.forEach(item => {
+      const estoqueItem = estoqueAtual.find(e => e.produto === item.nome);
+      if (!estoqueItem || !estoqueItem.disponivel || estoqueItem.estoque <= 0) {
+        esgotados.push(item.nome);
+      } else if (item.quantidade > estoqueItem.estoque) {
+        esgotados.push(item.nome + ' (apenas ' + estoqueItem.estoque + ' disponível)');
+      }
+    });
+
+    if (esgotados.length > 0) {
+      btn.disabled = false;
+      btn.textContent = "✨ Fazer Pedido";
+
+      // Atualiza estoqueData e recarrega badges
+      window.estoqueData = estoqueAtual;
+      await carregarEstoque();
+
+      // Mostra modal de esgotado
+      const lista = esgotados.map(e => '• ' + e).join('
+');
+      document.getElementById("modal-esgotado-lista").textContent = lista;
+      document.getElementById("modal-esgotado").classList.add("show");
+      return;
+    }
+  } catch(e) {
+    console.error("Erro ao verificar estoque:", e);
+    // Se falhar a verificação, continua o pedido normalmente
+  }
+
   btn.textContent = "Enviando...";
+
+  const total = itens.reduce((s, item) => s + item.subtotal, 0);
 
   const payload = {
     nome,
@@ -691,10 +745,9 @@ async function enviarPedido() {
     return;
   }
 
-  document.getElementById("modal-total").textContent = `Total: R$ ${total.toFixed(2).replace('.', ',')}`;
+  document.getElementById("modal-total").textContent = "Total: R$ " + total.toFixed(2).replace('.', ',');
   document.getElementById("modal").classList.add("show");
 
-  // Reset
   btn.disabled = false;
   btn.textContent = "✨ Fazer Pedido";
   qtds.fill(0);
@@ -703,6 +756,11 @@ async function enviarPedido() {
   document.getElementById("nome").value = "";
   document.getElementById("celular").value = "";
   document.getElementById("apto").value = "";
+}
+
+
+function fecharModalEsgotado() {
+  document.getElementById("modal-esgotado").classList.remove("show");
 }
 
 function fecharModal() {
