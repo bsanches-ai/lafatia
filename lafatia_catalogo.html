@@ -595,14 +595,18 @@ async function enviarPedido() {
   };
 
   try {
-    await fetch(WEBHOOK_URL, {
+    const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      mode: "no-cors"
+      body: JSON.stringify(payload)
     });
+    if (!res.ok) throw new Error("HTTP " + res.status);
   } catch(e) {
-    // no-cors: ignora erro de rede, webhook recebe
+    console.error("Erro webhook:", e);
+    showToast("Erro ao enviar pedido. Tente novamente.");
+    btn.disabled = false;
+    btn.textContent = "✨ Fazer Pedido";
+    return;
   }
 
   document.getElementById("modal-total").textContent = `Total: R$ ${total.toFixed(2).replace('.', ',')}`;
