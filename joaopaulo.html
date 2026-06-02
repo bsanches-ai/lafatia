@@ -333,6 +333,26 @@
             if (aviso) aviso.textContent = 'Restam apenas ' + qtd + '!';
           }
         });
+
+        // Combo de Lançamento (índice 9) depende de Torta de Frango Cremoso (0) e Bolo de Cenoura com Brigadeiro (5)
+        const COMBO_IDX = 9;
+        const qtdFrango = estoqueQtd[0];
+        const dispFrango = estoqueDisponivel[0];
+        const qtdCenoura = estoqueQtd[5];
+        const dispCenoura = estoqueDisponivel[5];
+        const qtdCombo = Math.min(qtdFrango, qtdCenoura);
+        const dispCombo = dispFrango && dispCenoura && qtdCombo > 0;
+        estoqueDisponivel[COMBO_IDX] = dispCombo;
+        estoqueQtd[COMBO_IDX] = qtdCombo;
+        const badgeCombo = document.getElementById('badge-' + COMBO_IDX);
+        const avisoCombo = document.getElementById('estoque-' + COMBO_IDX);
+        const ctrlCombo = document.getElementById('qtycontrol-' + COMBO_IDX);
+        if (!dispCombo) {
+          if (badgeCombo) badgeCombo.style.display = 'inline-block';
+          if (ctrlCombo) ctrlCombo.querySelectorAll('button').forEach(b => b.disabled = true);
+        } else if (qtdCombo <= 5) {
+          if (avisoCombo) avisoCombo.textContent = 'Restam apenas ' + qtdCombo + '!';
+        }
       } catch(e) { console.log('Erro ao carregar estoque', e); }
     }
 
@@ -377,9 +397,20 @@
         const estoque = data[0]?.estoque || data?.estoque || [];
         const esgotados = [];
         itens.forEach(item => {
-          const est = estoque.find(e => e.produto === item.nome);
-          if (est && (Number(est.estoque) < item.quantidade || est.disponivel === false || est.disponivel === 'FALSE')) {
-            esgotados.push(item.nome);
+          if (item.nome === 'Combo de Lançamento') {
+            // Combo verifica Torta de Frango Cremoso e Bolo de Cenoura com Brigadeiro
+            const estFrango = estoque.find(e => e.produto === 'Torta de Frango Cremoso');
+            const estCenoura = estoque.find(e => e.produto === 'Bolo de Cenoura com Brigadeiro');
+            const dispFrango = estFrango && Number(estFrango.estoque) >= item.quantidade && estFrango.disponivel !== false && estFrango.disponivel !== 'FALSE';
+            const dispCenoura = estCenoura && Number(estCenoura.estoque) >= item.quantidade && estCenoura.disponivel !== false && estCenoura.disponivel !== 'FALSE';
+            if (!dispFrango || !dispCenoura) {
+              esgotados.push(item.nome);
+            }
+          } else {
+            const est = estoque.find(e => e.produto === item.nome);
+            if (est && (Number(est.estoque) < item.quantidade || est.disponivel === false || est.disponivel === 'FALSE')) {
+              esgotados.push(item.nome);
+            }
           }
         });
         if (esgotados.length > 0) {
