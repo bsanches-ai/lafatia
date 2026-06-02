@@ -396,14 +396,28 @@
         const data = await res.json();
         const estoque = data[0]?.estoque || data?.estoque || [];
         const esgotados = [];
+        const qtdCombo = itens.find(i => i.nome === 'Combo de Lançamento')?.quantidade || 0;
+        const qtdFrangoAvulso = itens.find(i => i.nome === 'Torta de Frango Cremoso')?.quantidade || 0;
+        const qtdCenouraAvulso = itens.find(i => i.nome === 'Bolo de Cenoura com Brigadeiro')?.quantidade || 0;
+        const consumoFrango = qtdFrangoAvulso + qtdCombo;
+        const consumoCenoura = qtdCenouraAvulso + qtdCombo;
         itens.forEach(item => {
           if (item.nome === 'Combo de Lançamento') {
-            // Combo verifica Torta de Frango Cremoso e Bolo de Cenoura com Brigadeiro
             const estFrango = estoque.find(e => e.produto === 'Torta de Frango Cremoso');
             const estCenoura = estoque.find(e => e.produto === 'Bolo de Cenoura com Brigadeiro');
-            const dispFrango = estFrango && Number(estFrango.estoque) >= item.quantidade && estFrango.disponivel !== false && estFrango.disponivel !== 'FALSE';
-            const dispCenoura = estCenoura && Number(estCenoura.estoque) >= item.quantidade && estCenoura.disponivel !== false && estCenoura.disponivel !== 'FALSE';
+            const dispFrango = estFrango && Number(estFrango.estoque) >= consumoFrango && estFrango.disponivel !== false && estFrango.disponivel !== 'FALSE';
+            const dispCenoura = estCenoura && Number(estCenoura.estoque) >= consumoCenoura && estCenoura.disponivel !== false && estCenoura.disponivel !== 'FALSE';
             if (!dispFrango || !dispCenoura) {
+              esgotados.push(item.nome);
+            }
+          } else if (item.nome === 'Torta de Frango Cremoso') {
+            const est = estoque.find(e => e.produto === 'Torta de Frango Cremoso');
+            if (est && (Number(est.estoque) < consumoFrango || est.disponivel === false || est.disponivel === 'FALSE')) {
+              esgotados.push(item.nome);
+            }
+          } else if (item.nome === 'Bolo de Cenoura com Brigadeiro') {
+            const est = estoque.find(e => e.produto === 'Bolo de Cenoura com Brigadeiro');
+            if (est && (Number(est.estoque) < consumoCenoura || est.disponivel === false || est.disponivel === 'FALSE')) {
               esgotados.push(item.nome);
             }
           } else {
