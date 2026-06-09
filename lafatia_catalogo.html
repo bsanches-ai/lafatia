@@ -103,6 +103,25 @@
 
 <div class="container">
 
+
+
+  <div class="product-card combo-card">
+    <div class="product-info">
+      <div>
+        <div class="product-name">Duo Favorito <span class="badge-lancamento">NOVO ⭐</span></div>
+        <div class="combo-desc">1 Tortinha de Frango Cremoso + 1 Banoffee no Potinho</div>
+        <div class="product-price">R$ 20,00</div>
+        <span class="badge-esgotado" id="badge-10">Esgotado</span>
+        <p class="estoque-aviso" id="estoque-10"></p>
+      </div>
+      <div class="qty-control" id="qtycontrol-10">
+        <button class="qty-btn" onclick="changeQty(10,-1)">−</button>
+        <span class="qty-display" id="qty-10">0</span>
+        <button class="qty-btn" onclick="changeQty(10,1)">+</button>
+      </div>
+    </div>
+  </div>
+
   <div class="section-title"><h2>🥧 Tortas Salgadas</h2></div>
 
   <div class="product-card">
@@ -279,7 +298,7 @@
         <button class="qty-btn" onclick="changeQty(9,1)">+</button>
       </div>
     </div>
-  </div>
+  </div></div>
 
   <div class="form-section">
     <h3>Seus dados para entrega</h3>
@@ -348,27 +367,36 @@ const produtos = [
   { nome: "Bolo de Chocolate com Brigadeiro", preco: 10.00 },
   { nome: "Bolo de Coco Gelado", preco: 10.00 },
   { nome: "Bolo de Fubá com Goiabada", preco: 8.00 },
+  { nome: "Banoffee no Potinho", preco: 10.00 },
+  { nome: "Duo Favorito", preco: 20.00 },
 ];
 
-const qtds = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-const estoqueDisponivel = [true, true, true, true, true, true, true, true, true, true];
+const qtds = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const estoqueDisponivel = [true, true, true, true, true, true, true, true, true, true, true];
+
+const COMBO_IDX = 10;
+const COMBO_COMPONENTES = [0, 9]; // Torta de Frango (0) + Banoffee (9)
 
 async function carregarEstoque() {
   try {
     const res = await fetch(ESTOQUE_URL);
     const data = await res.json();
     const estoque = data[0].estoque;
-    window.estoqueData = estoque;
+    window.estoqueData = Array(produtos.length).fill({ estoque: 999, disponivel: true });
 
-    estoque.forEach(function(item, idx) {
-      const disponivel = item.disponivel && item.estoque > 0;
-      estoqueDisponivel[idx] = disponivel;
+    estoque.forEach(function(item) {
+      const idx = produtos.findIndex(p => p.nome === item.produto);
+      if (idx === -1) return;
+      const qtd = Number(item.estoque);
+      const disp = item.disponivel === true || item.disponivel === 'TRUE' || item.disponivel === 'true' || item.disponivel === 1;
+      estoqueDisponivel[idx] = disp && qtd > 0;
+      window.estoqueData[idx] = { estoque: qtd, disponivel: disp && qtd > 0 };
 
       const qtyControl = document.getElementById('qtycontrol-' + idx);
       const badge = document.getElementById('badge-' + idx);
       const estoqueEl = document.getElementById('estoque-' + idx);
 
-      if (!disponivel) {
+      if (!disp || qtd === 0) {
         if (badge) badge.style.display = 'inline-block';
         if (qtyControl) {
           qtyControl.style.opacity = '0.4';
@@ -377,7 +405,7 @@ async function carregarEstoque() {
       } else {
         if (badge) badge.style.display = 'none';
         if (estoqueEl) {
-          estoqueEl.textContent = item.estoque <= 5 ? 'Restam apenas ' + item.estoque + '!' : '';
+          estoqueEl.textContent = qtd <= 5 ? 'Restam apenas ' + qtd + '!' : '';
         }
         if (qtyControl) {
           qtyControl.style.opacity = '1';
@@ -385,6 +413,21 @@ async function carregarEstoque() {
         }
       }
     });
+
+    // Combo depende de frango (0) + banoffee (9)
+    const comboDisp = COMBO_COMPONENTES.every(i => estoqueDisponivel[i]);
+    const comboQtdMax = Math.min(...COMBO_COMPONENTES.map(i => window.estoqueData[i].estoque));
+    estoqueDisponivel[COMBO_IDX] = comboDisp;
+    window.estoqueData[COMBO_IDX] = { estoque: comboQtdMax, disponivel: comboDisp };
+    const comboBadge = document.getElementById('badge-' + COMBO_IDX);
+    const comboAviso = document.getElementById('estoque-' + COMBO_IDX);
+    const comboCtrl = document.getElementById('qtycontrol-' + COMBO_IDX);
+    if (!comboDisp) {
+      if (comboBadge) comboBadge.style.display = 'inline-block';
+      if (comboCtrl) { comboCtrl.style.opacity = '0.4'; comboCtrl.style.pointerEvents = 'none'; }
+    } else if (comboQtdMax <= 5) {
+      if (comboAviso) comboAviso.textContent = 'Restam apenas ' + comboQtdMax + '!';
+    }
   } catch(e) {
     console.error("Erro ao carregar estoque:", e);
   }
@@ -393,14 +436,22 @@ async function carregarEstoque() {
 window.addEventListener('DOMContentLoaded', carregarEstoque);
 
 function changeQty(i, delta) {
-  if (!estoqueDisponivel[i]) return;
+  if (!estoqueDisponivel[i] && delta > 0) return;
 
   const novaQtd = qtds[i] + delta;
-  const estoqueAtual = window.estoqueData ? window.estoqueData[i].estoque : 999;
 
-  if (delta > 0 && novaQtd > estoqueAtual) {
-    showToast('Quantidade indisponível! Máximo disponível: ' + estoqueAtual);
-    return;
+  if (i === COMBO_IDX && delta > 0) {
+    const maxCombo = Math.min(...COMBO_COMPONENTES.map(c => (window.estoqueData ? window.estoqueData[c].estoque : 999) - qtds[c]));
+    if (novaQtd > maxCombo) {
+      showToast('Estoque insuficiente dos componentes do combo!');
+      return;
+    }
+  } else {
+    const estoqueAtual = window.estoqueData ? window.estoqueData[i].estoque : 999;
+    if (delta > 0 && novaQtd > estoqueAtual) {
+      showToast('Quantidade indisponível! Máximo disponível: ' + estoqueAtual);
+      return;
+    }
   }
 
   qtds[i] = Math.max(0, novaQtd);
