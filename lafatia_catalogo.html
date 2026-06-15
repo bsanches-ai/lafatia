@@ -506,22 +506,26 @@ function changeQty(i, delta) {
   if (!estoqueDisponivel[i] && delta > 0) return;
 
   const novaQtd = qtds[i] + delta;
+  if (novaQtd < 0) return;
 
-  if (i === COMBO_IDX && delta > 0) {
-    const maxCombo = Math.min(...COMBO_COMPONENTES.map(c => (window.estoqueData ? window.estoqueData[c].estoque : 999) - qtds[c]));
+  const comboInfo = COMBOS.find(c => c.idx === i);
+  if (comboInfo && delta > 0) {
+    const maxCombo = Math.min(...comboInfo.componentes.map(c =>
+      Math.floor(((window.estoqueData?.[c]?.estoque || 999) - qtds[c] * comboInfo.qtdPorCombo) / comboInfo.qtdPorCombo)
+    ));
     if (novaQtd > maxCombo) {
-      showToast('Estoque insuficiente dos componentes do combo!');
+      showToast('Estoque insuficiente para esse combo!');
       return;
     }
   } else {
-    const estoqueAtual = window.estoqueData ? window.estoqueData[i].estoque : 999;
+    const estoqueAtual = window.estoqueData?.[i]?.estoque ?? 999;
     if (delta > 0 && novaQtd > estoqueAtual) {
       showToast('Quantidade indisponível! Máximo disponível: ' + estoqueAtual);
       return;
     }
   }
 
-  qtds[i] = Math.max(0, novaQtd);
+  qtds[i] = novaQtd;
   document.getElementById("qty-" + i).textContent = qtds[i];
   atualizarResumo();
 }
