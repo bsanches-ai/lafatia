@@ -590,12 +590,33 @@ async function enviarPedido() {
     window.estoqueData = estoqueAtual;
 
     const esgotados = [];
+
+    // Acumula consumo real por produto base (combos debitam dos componentes)
+    const consumo = {};
     itens.forEach(function(item) {
-      const estoqueItem = estoqueAtual.find(function(e) { return e.produto === item.nome; });
+      const idxProduto = produtos.findIndex(p => p.nome === item.nome);
+      const comboInfo = COMBOS.find(c => c.idx === idxProduto);
+      if (comboInfo) {
+        // Combo: debita dos componentes
+        comboInfo.componentes.forEach(function(c) {
+          consumo[c] = (consumo[c] || 0) + item.quantidade * comboInfo.qtdPorCombo;
+        });
+      } else {
+        // Produto avulso
+        consumo[idxProduto] = (consumo[idxProduto] || 0) + item.quantidade;
+      }
+    });
+
+    // Verifica se o estoque aguenta o consumo total
+    Object.keys(consumo).forEach(function(idxStr) {
+      const idx = Number(idxStr);
+      const nomeProduto = produtos[idx].nome;
+      const qtdNecessaria = consumo[idx];
+      const estoqueItem = estoqueAtual.find(function(e) { return e.produto === nomeProduto; });
       if (!estoqueItem || !estoqueItem.disponivel || estoqueItem.estoque <= 0) {
-        esgotados.push('• ' + item.nome + ' esgotou');
-      } else if (item.quantidade > estoqueItem.estoque) {
-        esgotados.push('• ' + item.nome + ' (apenas ' + estoqueItem.estoque + ' disponível)');
+        esgotados.push('• ' + nomeProduto + ' esgotou');
+      } else if (qtdNecessaria > estoqueItem.estoque) {
+        esgotados.push('• ' + nomeProduto + ' (apenas ' + estoqueItem.estoque + ' disponível)');
       }
     });
 
