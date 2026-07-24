@@ -539,8 +539,7 @@ function checkSecoes() {
         const comboLabel = comboCard && comboCard.dataset.comboLabel ? comboCard.dataset.comboLabel : null;
         const nomeExibir = comboLabel ? comboLabel + ' - ' + comboCard.querySelector('.combo-desc').textContent : p.qtd + 'x ' + p.nome;
         return `<div class="resumo-item"><span>${nomeExibir}</span><span>R$ ${(p.qtd * p.preco).toFixed(2).replace('.', ',')}</span></div>`;
-      })
-      ).join('');
+      }).join('');
       const total = itens.reduce((s, p) => s + p.qtd * p.preco, 0);
       totalEl.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
     }
