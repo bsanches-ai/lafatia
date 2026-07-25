@@ -94,6 +94,18 @@
   }
 
   body.loading .container { visibility: hidden; }
+
+  .encomenda-banner { color: inherit;
+    display: flex; align-items: center; justify-content: space-between;
+    background: #fff8f3; border: 1.5px solid var(--borda);
+    border-left: 4px solid var(--terracota);
+    border-radius: 12px; padding: 12px 16px; margin: 16px 0 8px;
+    text-decoration: none; cursor: pointer;
+  }
+  .encomenda-banner:hover { background: #fdf0e8; }
+  .encomenda-banner-title { font-family: 'Playfair Display', serif; font-size: 0.92rem; color: var(--terracota); font-weight: 700; }
+  .encomenda-banner-sub { font-size: 0.72rem; color: var(--subtexto); margin-top: 2px; text-decoration: none; }
+  .encomenda-banner-arrow { color: var(--terracota); font-size: 1.3rem; font-weight: bold; }
 </style>
 </head>
 <body class="loading">
@@ -108,6 +120,15 @@
 
 
   
+
+  <a class="encomenda-banner" href="https://bsanches-ai.github.io/lafatia/encomendas.html">
+    <div>
+      <div class="encomenda-banner-title">📦 Ver tamanhos maiores →</div>
+      <div class="encomenda-banner-sub">500ml, 750ml e 1.500ml — sob encomenda com 1 dia de antecedência</div>
+    </div>
+    <span class="encomenda-banner-arrow">›</span>
+  </a>
+
   <div class="section-title" id="section-combos"><h2>🎁 Combos</h2></div>
 
   <div class="product-card combo-card" id="card-10" data-combo="true" data-combo-nome="2x Torta de Frango Cremoso">
